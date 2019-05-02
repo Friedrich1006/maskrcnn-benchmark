@@ -103,6 +103,18 @@ class DatasetCatalog(object):
         "cityscapes_fine_instanceonly_seg_test_cocostyle": {
             "img_dir": "cityscapes/images",
             "ann_file": "cityscapes/annotations/instancesonly_filtered_gtFine_test.json"
+        },
+        "VID_train_all": {
+            "root": "datasets/ILSVRC2015",
+            "task_set": "VID",
+            "split": "train",
+            "img_index": "VID_train_all"
+        },
+        "VID_val_all": {
+            "root": "datasets/ILSVRC2015",
+            "task_set": "VID",
+            "split": "val",
+            "img_index": "VID_val_all"
         }
     }
 
@@ -129,6 +141,11 @@ class DatasetCatalog(object):
             return dict(
                 factory="PascalVOCDataset",
                 args=args,
+            )
+        elif "VID" in name or "DET" in name:
+            return dict(
+                factory="ILSVRCDataset",
+                args=DatasetCatalog.DATASETS[name],
             )
         raise RuntimeError("Dataset not available: {}".format(name))
 
