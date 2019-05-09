@@ -30,11 +30,12 @@ class GeneralizedRCNNSeq(nn.Module):
         self.rpn = build_rpn(cfg, self.backbone.module.out_channels)
         self.roi_heads = build_roi_heads(cfg, self.backbone.module.out_channels)
 
-    def forward(self, images, targets=None, frames=None):
+    def forward(self, images, targets=None, videos=None, frames=None):
         """
         Arguments:
             images (list[Tensor] or ImageList): images to be processed
             targets (list[BoxList]): ground-truth boxes present in the image (optional)
+            videos (list[str]): video names of images (optional)
             frames (list[int]): frame indices of images in videos (optional)
 
         Returns:
@@ -48,7 +49,7 @@ class GeneralizedRCNNSeq(nn.Module):
             raise ValueError("In training mode, targets should be passed")
         images = to_image_list(images)
         features = self.backbone(images.tensors)
-        proposals, proposal_losses = self.rpn(images, features, targets)
+        proposals, proposal_losses = self.rpn(images, features, targets, videos, frames)
         if self.roi_heads:
             x, result, detector_losses = self.roi_heads(features, proposals, targets)
         else:

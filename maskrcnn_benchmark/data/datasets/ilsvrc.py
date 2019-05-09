@@ -82,9 +82,10 @@ class ILSVRCDataset(torch.utils.data.Dataset):
         if self.transforms is not None:
             img, target = self.transforms(img, target)
 
+        video = file_name.rsplit('/', 1)[0]
         frame = self.frame_idx[idx]
 
-        return img, target, (idx, file_name, frame)
+        return img, target, (idx, file_name, video, frame)
 
     def __len__(self):
         return len(self.file_idx)

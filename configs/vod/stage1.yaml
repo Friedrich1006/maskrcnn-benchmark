@@ -1,5 +1,6 @@
 MODEL:
   META_ARCHITECTURE: "GeneralizedRCNNSeq"
+  VIDEO_ON: True
   WEIGHT: "catalog://ImageNetPretrained/MSRA/R-50"
   BACKBONE:
     CONV_BODY: 'R-50-C4'
@@ -27,3 +28,4 @@ SOLVER:
   IMS_PER_BATCH: 2
 TEST:
   IMS_PER_BATCH: 2
+OUTPUT_DIR: "stage1"

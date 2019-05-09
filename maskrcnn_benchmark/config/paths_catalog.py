@@ -104,6 +104,12 @@ class DatasetCatalog(object):
             "img_dir": "cityscapes/images",
             "ann_file": "cityscapes/annotations/instancesonly_filtered_gtFine_test.json"
         },
+        "VID_train_seg16": {
+            "root": "datasets/ILSVRC2015",
+            "task_set": "VID",
+            "split": "train",
+            "img_index": "VID_train_seg16"
+        },
         "VID_train_all": {
             "root": "datasets/ILSVRC2015",
             "task_set": "VID",
