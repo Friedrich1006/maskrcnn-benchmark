@@ -83,7 +83,10 @@ def do_train(
         # Note: If mixed precision is not used, this ends up doing nothing
         # Otherwise apply loss scaling for mixed-precision recipe
         with amp.scale_loss(losses, optimizer) as scaled_losses:
-            scaled_losses.backward()
+            if iteration % 8 == 0:
+                scaled_losses.backward()
+            else:
+                scaled_losses.backward(retain_graph=True)
         optimizer.step()
 
         batch_time = time.time() - end

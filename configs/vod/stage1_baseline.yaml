@@ -27,3 +27,4 @@ SOLVER:
   IMS_PER_BATCH: 2
 TEST:
   IMS_PER_BATCH: 2
+OUTPUT_DIR: "stage1_baseline"
