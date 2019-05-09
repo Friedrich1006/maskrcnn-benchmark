@@ -72,9 +72,9 @@ class ConvLSTMCell(nn.Module):
 
         return h_next, c_next
 
-    def init_hidden(self, batch_size, height, width):
-        return [torch.zeros(batch_size, self.hidden_dim, height, width),
-                torch.zeros(batch_size, self.hidden_dim, height, width)]
+    def init_hidden(self, batch_size, height, width, device):
+        return [torch.zeros(batch_size, self.hidden_dim, height, width, device=device),
+                torch.zeros(batch_size, self.hidden_dim, height, width, device=device)]
 
 
 class ConvLSTM(nn.Module):
@@ -142,7 +142,8 @@ class ConvLSTM(nn.Module):
         if hidden_state is None:
             hidden_state = self._init_hidden(input_tensor.size(0),
                                              input_tensor.size(2),
-                                             input_tensor.size(3))
+                                             input_tensor.size(3),
+                                             input_tensor.device)
 
         last_state_list = []
 
@@ -167,10 +168,11 @@ class ConvLSTM(nn.Module):
 
         return last_state_list
 
-    def _init_hidden(self, batch_size, height, width):
+    def _init_hidden(self, batch_size, height, width, device):
         init_states = []
         for i in range(self.num_layers):
-            init_states.append(self.cell_list[i].init_hidden(batch_size, height, width))
+            init_states.append(self.cell_list[i].init_hidden(batch_size, height,
+                                                             width, device))
         return init_states
 
     @staticmethod

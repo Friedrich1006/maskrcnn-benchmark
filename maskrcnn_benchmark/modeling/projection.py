@@ -44,5 +44,4 @@ def projection(boxes, feature_size):
         proj[x1: x2, y3: y4] += o * xp * yq
         proj[x3: x4, y1: y2] += o * xq * yp
         proj[x3: x4, y3: y4] += o * xq * yq
-    # proj should not require grad
     return proj.view(1, 1, feature_size[0], feature_size[1])

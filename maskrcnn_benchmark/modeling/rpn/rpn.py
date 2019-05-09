@@ -9,8 +9,8 @@ from maskrcnn_benchmark.modeling.rpn.retinanet.retinanet import build_retinanet
 from .loss import make_rpn_loss_evaluator
 from .anchor_generator import make_anchor_generator
 from .inference import make_rpn_postprocessor
-from ..convlstm import ConvLSTM, ConvLSTMCell
-from ..projection import projection
+from maskrcnn_benchmark.modeling.convlstm import ConvLSTM, ConvLSTMCell
+from maskrcnn_benchmark.modeling.projection import projection
 
 
 class RPNHeadConvRegressor(nn.Module):
@@ -259,7 +259,7 @@ class RPNVideoModule(torch.nn.Module):
                 heatmap = self.last_state[-1][0]
             else:
                 heatmap = torch.zeros(1, 1, feature_w, feature_h, device=device)
-            features_i = features[0][idx]
+            features_i = features[0][idx].unsqueeze(0)
             comb = [torch.cat((features_i, heatmap), dim=1)]
             anchors_i = [anchors[idx]]
             targets_i = [targets[idx]]
@@ -269,7 +269,7 @@ class RPNVideoModule(torch.nn.Module):
                                                     rpn_box_regression, targets_i)
                 proj = projection(boxes[0], (feature_w, feature_h))
                 if self.video == videos[idx]:
-                    loss_rnn = F.mse_loss(self.last_state[-1][0], proj)
+                    loss_rnn = F.mse_loss(heatmap, proj)
                     losses['loss_rnn'] = loss_rnn
                     self.last_state = self.rnn(proj, self.last_state)
                 else:
