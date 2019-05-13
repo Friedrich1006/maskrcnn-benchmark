@@ -176,8 +176,10 @@ if __name__ == '__main__':
             if frames[i] % 16 == 15:
                 meters.update(loss=loss)
                 optimizer.zero_grad()
-                loss.backward(retain_graph=True)
+                loss.backward()
                 optimizer.step()
+                loss = torch.zeros(1, device=device)
+                last_state[-1][0].requires_grad = False
 
         batch_time = time.time() - end
         end = time.time()
