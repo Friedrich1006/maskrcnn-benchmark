@@ -175,8 +175,8 @@ if __name__ == '__main__':
 
             if frames[i] % 16 == 15:
                 meters.update(loss=loss)
-                optimizer.zero_grad(retain_graph=True)
-                loss.backward()
+                optimizer.zero_grad()
+                loss.backward(retain_graph=True)
                 optimizer.step()
 
         batch_time = time.time() - end
