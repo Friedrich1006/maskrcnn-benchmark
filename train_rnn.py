@@ -77,6 +77,21 @@ cfg.OUTPUT_DIR = 'stage1_rnn'
 
 cfg.freeze()
 
+output_dir = cfg.OUTPUT_DIR
+
+logger = setup_logger("maskrcnn_benchmark", output_dir, get_rank())
+logger.info("Using {} GPUs".format(num_gpus))
+logger.info(args)
+
+logger.info("Collecting env info (might take some time)")
+logger.info("\n" + collect_env_info())
+
+logger.info("Loaded configuration file {}".format(args.config_file))
+with open(args.config_file, "r") as cf:
+    config_str = "\n" + cf.read()
+    logger.info(config_str)
+logger.info("Running with config:\n{}".format(cfg))
+
 model = build_detection_model(cfg)
 backbone = model.backbone
 model = model.rpn.rnn
@@ -89,8 +104,6 @@ scheduler = make_lr_scheduler(cfg, optimizer)
 
 arguments = {}
 arguments["iteration"] = 0
-
-output_dir = cfg.OUTPUT_DIR
 
 save_to_disk = get_rank() == 0
 checkpointer = DetectronCheckpointer(
@@ -123,7 +136,7 @@ if __name__ == '__main__':
     video = ''
     feature_w = 0
     feature_h = 0
-    loss = None
+    loss = torch.zeros(1, device=device)
     start_training_time = time.time()
     end = time.time()
     for iteration, (images, targets, others) in enumerate(data_loader, start_iter):
@@ -143,21 +156,16 @@ if __name__ == '__main__':
             if video == videos[i]:
                 heatmap = last_state[-1][0]
                 proj = projection(boxes, (feature_w, feature_h))
-                loss = F.mse_loss(heatmap, proj)
+                loss += F.mse_loss(heatmap, proj)
                 last_state = model(proj, last_state)
-
-                meters.update(loss=loss)
-                optimizer.zero_grad()
-                loss.backward(retain_graph=True)
-                optimizer.step()
 
             else:
                 images = images.to(device)
                 images = to_image_list(images)
                 with torch.no_grad():
                     features = backbone(images.tensors)
-                feature_w = features[0].size(2)
-                feature_h = features[0].size(3)
+                    feature_w = features[0].size(2)
+                    feature_h = features[0].size(3)
 
                 heatmap = torch.zeros(1, 1, feature_w, feature_h, device=device)
                 proj = projection(boxes, (feature_w, feature_h))
@@ -165,7 +173,11 @@ if __name__ == '__main__':
                 last_state = model(proj)
                 video = videos[i]
 
+            if frames[i] % 16 == 15:
                 meters.update(loss=loss)
+                optimizer.zero_grad(retain_graph=True)
+                loss.backward()
+                optimizer.step()
 
         batch_time = time.time() - end
         end = time.time()
