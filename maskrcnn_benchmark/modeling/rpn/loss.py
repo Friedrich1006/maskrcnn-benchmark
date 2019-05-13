@@ -49,7 +49,7 @@ class RPNLossComputation(object):
         # NB: need to clamp the indices because we can have a single
         # GT in the image, and matched_idxs can be -2, which goes
         # out of bounds
-        if matched_idxs.clamp(min=0).sum() > 0:
+        if target.bbox.shape[0]:
             matched_targets = target[matched_idxs.clamp(min=0)]
         else:
             matched_targets = target
