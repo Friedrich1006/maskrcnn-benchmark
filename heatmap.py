@@ -68,34 +68,36 @@ with open(cache_file, 'rb') as fid:
 output_dir = cfg.OUTPUT_DIR
 proc = ImageProc()
 
-for idx in range(100):
-file_name = file_idx[idx]
-img = Image.open(img_path % file_name).convert('RGB')
-anno = annos[idx]
-height, width = anno['im_info']
-target = BoxList(anno['boxes'].reshape(-1, 4), (width, height), mode='xyxy')
-target.add_field('labels', anno['labels'])
-target.add_field('scores', torch.ones(len(target)))
-target.add_field('objectness', torch.ones(len(target)))
-target = target.clip_to_image(remove_empty=True)
-img, target = transform(img, target)
-if idx == 0:
-    with torch.no_grad():
-        images = to_image_list(img.unsqueeze(0).to(device))
-        features = backbone(images.tensors)
-        feature_w = features[0].size(2)
-        feature_h = features[0].size(3)
-heatmap = torch.zeros(1, 1, feature_w, feature_h, device=device)
-proj = projection(target, (feature_w, feature_h))
-last_state = model(proj)
-else:
-    heatmap = last_state[-1][0]
-    proj = projection(target, (feature_w, feature_h))
-    last_state = model(proj, last_state)
-img = (img[[2, 1, 0]].permute(1, 2, 0) * 255).numpy().astype('uint8')
-img1 = img.copy()
-proc.overlay_boxes(img1, target)
-img2 = img.copy()
-proc.overlay_heatmap(img2, heatmap)
-img3 = np.concatenate((img1, img2))
-cv2.imwrite(os.path.join(output_dir, '{:0>4d}.png'.format(idx)), img3)
+with torch.no_grad():
+    for idx in range(100):
+        file_name = file_idx[idx]
+        img = Image.open(img_path % file_name).convert('RGB')
+        anno = annos[idx]
+        height, width = anno['im_info']
+        target = BoxList(anno['boxes'].reshape(-1, 4), (width, height), mode='xyxy')
+        target.add_field('labels', anno['labels'])
+        target.add_field('scores', torch.ones(len(target)))
+        target.add_field('objectness', torch.ones(len(target)))
+        target = target.clip_to_image(remove_empty=True)
+        img, target = transform(img, target)
+        if idx == 0:
+            images = to_image_list(img.unsqueeze(0).to(device))
+            features = backbone(images.tensors)
+            feature_w = features[0].size(2)
+            feature_h = features[0].size(3)
+            heatmap = torch.zeros(1, 1, feature_w, feature_h, device=device)
+            proj = projection(target, (feature_w, feature_h)).to(device)
+            last_state = model(proj)
+        else:
+            heatmap = last_state[-1][0]
+            proj = projection(target, (feature_w, feature_h)).to(device)
+            last_state = model(proj, last_state)
+        img = (img[[2, 1, 0]].permute(1, 2, 0) * 255).numpy().astype('uint8')
+        img1 = img.copy()
+        img1 = proc.overlay_boxes(img1, target)
+        img2 = img.copy()
+        img2 = proc.overlay_heatmap(img2, proj)
+        img3 = img.copy()
+        img3 = proc.overlay_heatmap(img3, heatmap)
+        img4 = np.concatenate((img1, img2, img3))
+        cv2.imwrite(os.path.join(output_dir, '{:0>4d}.png'.format(idx)), img4)
