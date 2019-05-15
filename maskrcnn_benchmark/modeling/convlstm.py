@@ -19,7 +19,7 @@ class ConvLSTMCell(nn.Module):
             Number of channels of input tensor.
         hidden_dim: int
             Number of channels of hidden state.
-        kernel_size: (int, int)
+        kernel_size: int
             Size of the convolutional kernel.
         bias: bool
             Whether or not to add the bias.
@@ -31,7 +31,7 @@ class ConvLSTMCell(nn.Module):
         self.hidden_dim = hidden_dim
 
         self.kernel_size = kernel_size
-        self.padding = kernel_size[0] // 2, kernel_size[1] // 2
+        self.padding = kernel_size
         self.bias = bias
 
         self.conv = nn.Conv2d(in_channels=self.input_dim + self.hidden_dim,

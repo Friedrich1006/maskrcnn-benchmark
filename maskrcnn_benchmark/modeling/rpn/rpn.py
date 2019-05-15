@@ -229,7 +229,7 @@ class RPNVideoModule(torch.nn.Module):
         self.box_selector_test = box_selector_test
         self.loss_evaluator = loss_evaluator
 
-        self.rnn = ConvLSTM(1, [2, 4, 2, 1], (3, 3), num_layers=4)
+        self.rnn = ConvLSTM(1, [4, 16, 4, 1], [5, 5, 3, 3], num_layers=4)
         self.last_state = None
         self.video = ''
 
@@ -251,14 +251,14 @@ class RPNVideoModule(torch.nn.Module):
                 testing, it is an empty dict.
         """
         anchors = self.anchor_generator(images, features)
-        feature_w = features[0].size(2)
-        feature_h = features[0].size(3)
+        feature_h = features[0].size(2)
+        feature_w = features[0].size(3)
         device = features[0].device
         for idx in range(images.tensors.size(0)):
             if self.video == videos[idx]:
                 heatmap = self.last_state[-1][0]
             else:
-                heatmap = torch.zeros(1, 1, feature_w, feature_h, device=device)
+                heatmap = torch.zeros(1, 1, feature_h, feature_w, device=device)
             features_i = features[0][idx].unsqueeze(0)
             comb = [torch.cat((features_i, heatmap), dim=1)]
             anchors_i = [anchors[idx]]
@@ -267,7 +267,7 @@ class RPNVideoModule(torch.nn.Module):
             if self.training:
                 boxes, losses = self._forward_train(anchors_i, objectness,
                                                     rpn_box_regression, targets_i)
-                proj = projection(boxes[0], (feature_w, feature_h))
+                proj = projection(boxes[0], (feature_h, feature_w))
                 if self.video == videos[idx]:
                     loss_rnn = F.mse_loss(heatmap, proj)
                     losses['loss_rnn'] = loss_rnn
@@ -279,7 +279,7 @@ class RPNVideoModule(torch.nn.Module):
                 return boxes, losses
             else:
                 boxes, _ = self._forward_test(anchors, objectness, rpn_box_regression)
-                proj = projection(boxes[0], (feature_w, feature_h))
+                proj = projection(boxes[0], (feature_h, feature_w))
                 if self.video == videos[idx]:
                     self.last_state = self.rnn(proj, self.last_state)
                 else:

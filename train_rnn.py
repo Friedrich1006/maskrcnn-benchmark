@@ -78,6 +78,8 @@ cfg.OUTPUT_DIR = 'stage1_rnn_mse'
 cfg.freeze()
 
 output_dir = cfg.OUTPUT_DIR
+if output_dir:
+    mkdir(output_dir)
 
 logger = setup_logger("maskrcnn_benchmark", output_dir, get_rank())
 logger.info("Using {} GPUs".format(num_gpus))
@@ -136,7 +138,7 @@ if __name__ == '__main__':
     video = ''
     feature_h = 0
     feature_w = 0
-    loss = torch.zeros(1, device=device)
+    loss = torch.zeros(1, device=device, requires_grad=True)
     start_training_time = time.time()
     end = time.time()
     for iteration, (images, targets, others) in enumerate(data_loader, start_iter):
