@@ -179,7 +179,9 @@ if __name__ == '__main__':
                 loss.backward()
                 optimizer.step()
                 loss = torch.zeros(1, device=device)
-                last_state[-1][0].requires_grad = False
+                for j in range(len(last_state)):
+                    last_state[j][0] = last_state[j][0].detach()
+                    last_state[j][1] = last_state[j][1].detach()
 
         batch_time = time.time() - end
         end = time.time()
