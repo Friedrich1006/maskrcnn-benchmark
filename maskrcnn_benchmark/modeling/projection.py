@@ -4,8 +4,8 @@ from math import floor, ceil
 def projection(boxes, feature_size):
     device = boxes.bbox.device
 
-    x_ratio = float(feature_size[0]) / float(boxes.size[1])
-    y_ratio = float(feature_size[1]) / float(boxes.size[0])
+    y_ratio = float(feature_size[0]) / float(boxes.size[1])
+    x_ratio = float(feature_size[1]) / float(boxes.size[0])
     ratio = torch.tensor([x_ratio, y_ratio, x_ratio, y_ratio], device=device)
     resized_boxes = boxes.bbox * ratio
     resized_boxes = resized_boxes.cpu()

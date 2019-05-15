@@ -71,9 +71,9 @@ if args.distributed:
 cfg.merge_from_file(args.config_file)
 cfg.merge_from_list(args.opts)
 
-cfg.DATASETS.TRAIN = ('VID_train_all', )
+cfg.DATASETS.TRAIN = ('VID_train_seg16', )
 cfg.SOLVER.IMS_PER_BATCH = 1
-cfg.OUTPUT_DIR = 'stage1_rnn'
+cfg.OUTPUT_DIR = 'stage1_rnn_mse'
 
 cfg.freeze()
 
@@ -134,8 +134,8 @@ if __name__ == '__main__':
     model.train()
     last_state = None
     video = ''
-    feature_w = 0
     feature_h = 0
+    feature_w = 0
     loss = torch.zeros(1, device=device)
     start_training_time = time.time()
     end = time.time()
@@ -155,33 +155,27 @@ if __name__ == '__main__':
             boxes.add_field('objectness', torch.ones(len(targets[i]), device=device))
             if video == videos[i]:
                 heatmap = last_state[-1][0]
-                proj = projection(boxes, (feature_w, feature_h))
+                proj = projection(boxes, (feature_h, feature_w))
                 loss += F.mse_loss(heatmap, proj)
                 last_state = model(proj, last_state)
 
             else:
-                images = images.to(device)
-                images = to_image_list(images)
-                with torch.no_grad():
-                    features = backbone(images.tensors)
-                    feature_w = features[0].size(2)
-                    feature_h = features[0].size(3)
-
-                heatmap = torch.zeros(1, 1, feature_w, feature_h, device=device)
-                proj = projection(boxes, (feature_w, feature_h))
-                loss = torch.zeros(1, device=device)
-                last_state = model(proj)
-                video = videos[i]
-
-            if frames[i] % 16 == 15:
                 meters.update(loss=loss)
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
+                images = images.to(device)
+                images = to_image_list(images)
+                with torch.no_grad():
+                    features = backbone(images.tensors)
+                    feature_h = features[0].size(2)
+                    feature_w = features[0].size(3)
+
+                heatmap = torch.zeros(1, 1, feature_h, feature_w, device=device)
+                proj = projection(boxes, (feature_h, feature_w))
                 loss = torch.zeros(1, device=device)
-                for j in range(len(last_state)):
-                    last_state[j][0] = last_state[j][0].detach()
-                    last_state[j][1] = last_state[j][1].detach()
+                last_state = model(proj)
+                video = videos[i]
 
         batch_time = time.time() - end
         end = time.time()

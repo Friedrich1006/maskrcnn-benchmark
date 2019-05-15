@@ -83,15 +83,17 @@ with torch.no_grad():
         if idx == 0:
             images = to_image_list(img.unsqueeze(0).to(device))
             features = backbone(images.tensors)
-            feature_w = features[0].size(2)
-            feature_h = features[0].size(3)
-            heatmap = torch.zeros(1, 1, feature_w, feature_h, device=device)
-            proj = projection(target, (feature_w, feature_h)).to(device)
+            feature_h = features[0].size(2)
+            feature_w = features[0].size(3)
+            heatmap = torch.zeros(1, 1, feature_h, feature_w, device=device)
+            proj = projection(target, (feature_h, feature_w)).to(device)
             last_state = model(proj)
+
         else:
             heatmap = last_state[-1][0]
-            proj = projection(target, (feature_w, feature_h)).to(device)
+            proj = projection(target, (feature_h, feature_w)).to(device)
             last_state = model(proj, last_state)
+
         img = (img[[2, 1, 0]].permute(1, 2, 0) * 255).numpy().astype('uint8')
         img1 = img.copy()
         img1 = proc.overlay_boxes(img1, target)
