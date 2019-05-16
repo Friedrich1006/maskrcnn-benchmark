@@ -139,7 +139,7 @@ class RPNModule(torch.nn.Module):
         self.box_selector_test = box_selector_test
         self.loss_evaluator = loss_evaluator
 
-    def forward(self, images, features, targets=None):
+    def forward(self, images, features, targets=None, videos=None, frames=None):
         """
         Arguments:
             images (ImageList): images for which we want to compute the predictions

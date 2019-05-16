@@ -37,7 +37,7 @@ print('Building model...')
 model = build_detection_model(cfg)
 backbone = model.backbone
 model = model.rpn.rnn
-model.load_state_dict(torch.load('stage1_rnn/rnn_0.pth'))
+model.load_state_dict(torch.load('stage1_rnn_mse/model_final.pth')['model'])
 device = torch.device(cfg.MODEL.DEVICE)
 backbone.to(device)
 model.to(device)
