@@ -9,8 +9,6 @@ import torch.distributed as dist
 from maskrcnn_benchmark.utils.comm import get_world_size
 from maskrcnn_benchmark.utils.metric_logger import MetricLogger
 
-from apex import amp
-
 import os
 from tensorboardX import SummaryWriter
 
@@ -80,13 +78,10 @@ def do_train(
         meters.update(loss=losses_reduced, **loss_dict_reduced)
 
         optimizer.zero_grad()
-        # Note: If mixed precision is not used, this ends up doing nothing
-        # Otherwise apply loss scaling for mixed-precision recipe
-        with amp.scale_loss(losses, optimizer) as scaled_losses:
-            if iteration % 8 == 0:
-                scaled_losses.backward()
-            else:
-                scaled_losses.backward(retain_graph=True)
+        if iteration % 8 == 0:
+            losses.backward()
+        else:
+            losses.backward(retain_graph=True)
         optimizer.step()
 
         batch_time = time.time() - end
