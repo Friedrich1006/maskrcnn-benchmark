@@ -233,7 +233,7 @@ class RPNVideoModule(torch.nn.Module):
                             cfg.MODEL.RPN.RNN.KERNEL_SIZE, cfg.MODEL.RPN.RNN.NUM_LAYERS,
                             cfg.MODEL.RPN.RNN.BIAS, cfg.MODEL.RPN.RNN.PRETRAIN)
         self.project_th = cfg.MODEL.RPN.RNN.PROJECT_TH
-        self.combination = getattr(self, cfg.MODEL.RPN.COMBINATION)
+        self.combination = getattr(self, cfg.MODEL.RPN.RNN.COMBINATION)
         self.last_state = None
         self.video = ''
 
@@ -264,7 +264,7 @@ class RPNVideoModule(torch.nn.Module):
             else:
                 heatmap = torch.zeros(1, 1, feature_h, feature_w, device=device)
             features_i = features[0][idx].unsqueeze(0)
-            comb = self.combination(features_i, heatmap)
+            comb = [self.combination(features_i, heatmap)]
             anchors_i = [anchors[idx]]
             targets_i = [targets[idx]]
             objectness, rpn_box_regression = self.head(comb)
