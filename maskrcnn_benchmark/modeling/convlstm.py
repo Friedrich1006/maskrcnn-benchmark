@@ -80,7 +80,8 @@ class ConvLSTMCell(nn.Module):
 class ConvLSTM(nn.Module):
 
     def __init__(self, input_dim, hidden_dim, kernel_size,
-                 num_layers=1, bias=True, return_all_layers=True):
+                 num_layers=1, bias=True, pretrain=None,
+                 return_all_layers=True):
         """
         Initialize ConvLSTM.
 
@@ -96,6 +97,8 @@ class ConvLSTM(nn.Module):
             Number of layers.
         bias: bool
             Whether or not to add the bias.
+        pretrain: str
+            Path to pretrained model.
         return_all_layers: bool
             Whether or not to return all layer states.
         """
@@ -121,6 +124,11 @@ class ConvLSTM(nn.Module):
                                           bias=self.bias))
 
         self.cell_list = nn.ModuleList(cell_list)
+
+        self.freezed = False
+        if pretrain is not None:
+            self.load_state_dict(torch.load(pretrain))
+            self.freeze()
 
     def forward(self, input_tensor, hidden_state=None):
         """
@@ -167,6 +175,11 @@ class ConvLSTM(nn.Module):
             last_state_list = last_state_list[-1:]
 
         return last_state_list
+
+    def freeze(self):
+        for p in self.cell_list.parameters():
+            p.requires_grad = False
+        self.freezed = True
 
     def _init_hidden(self, batch_size, height, width, device):
         init_states = []

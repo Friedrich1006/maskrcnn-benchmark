@@ -213,7 +213,7 @@ class RPNVideoModule(torch.nn.Module):
 
         rpn_head = registry.RPN_HEADS[cfg.MODEL.RPN.RPN_HEAD]
         head = rpn_head(
-            cfg, in_channels + 1, anchor_generator.num_anchors_per_location()[0]
+            cfg, in_channels, anchor_generator.num_anchors_per_location()[0]
         )
 
         rpn_box_coder = BoxCoder(weights=(1.0, 1.0, 1.0, 1.0))
@@ -229,7 +229,11 @@ class RPNVideoModule(torch.nn.Module):
         self.box_selector_test = box_selector_test
         self.loss_evaluator = loss_evaluator
 
-        self.rnn = ConvLSTM(1, [4, 16, 4, 1], [5, 5, 3, 3], num_layers=4)
+        self.rnn = ConvLSTM(cfg.MODEL.RPN.RNN.INPUT_DIM, cfg.MODEL.RPN.RNN.HIDDEN_DIM,
+                            cfg.MODEL.RPN.RNN.KERNEL_SIZE, cfg.MODEL.RPN.RNN.NUM_LAYERS,
+                            cfg.MODEL.RPN.RNN.BIAS, cfg.MODEL.RPN.RNN.PRETRAIN)
+        self.project_th = cfg.MODEL.RPN.RNN.PROJECT_TH
+        self.combination = getattr(self, cfg.MODEL.RPN.COMBINATION)
         self.last_state = None
         self.video = ''
 
@@ -260,26 +264,28 @@ class RPNVideoModule(torch.nn.Module):
             else:
                 heatmap = torch.zeros(1, 1, feature_h, feature_w, device=device)
             features_i = features[0][idx].unsqueeze(0)
-            comb = [torch.cat((features_i, heatmap), dim=1)]
+            comb = self.combination(features_i, heatmap)
             anchors_i = [anchors[idx]]
             targets_i = [targets[idx]]
             objectness, rpn_box_regression = self.head(comb)
             if self.training:
                 boxes, losses = self._forward_train(anchors_i, objectness,
                                                     rpn_box_regression, targets_i)
-                proj = projection(boxes[0], (feature_h, feature_w))
+                proj = projection(boxes[0], (feature_h, feature_w), self.project_th)
                 if self.video == videos[idx]:
-                    loss_rnn = F.mse_loss(heatmap, proj)
-                    losses['loss_rnn'] = loss_rnn
+                    if not self.rnn.freezed:
+                        loss_rnn = F.mse_loss(heatmap, proj)
+                        losses['loss_rnn'] = loss_rnn
                     self.last_state = self.rnn(proj, self.last_state)
                 else:
-                    losses['loss_rnn'] = torch.zeros(1, device=device)
+                    if not self.rnn.freezed:
+                        losses['loss_rnn'] = torch.zeros(1, device=device)
                     self.last_state = self.rnn(proj)
                     self.video = videos[idx]
                 return boxes, losses
             else:
                 boxes, _ = self._forward_test(anchors, objectness, rpn_box_regression)
-                proj = projection(boxes[0], (feature_h, feature_w))
+                proj = projection(boxes[0], (feature_h, feature_w), self.project_th)
                 if self.video == videos[idx]:
                     self.last_state = self.rnn(proj, self.last_state)
                 else:
@@ -322,6 +328,19 @@ class RPNVideoModule(torch.nn.Module):
             ]
             boxes = [box[ind] for box, ind in zip(boxes, inds)]
         return boxes, {}
+
+    def attention(self, feature, heatmap):
+        b, c, h, w = heatmap.shape
+        att = F.softmax(heatmap.view(b, c, -1), dim=2).view(b, c, h, w)
+        feature_att = feature * att
+        return feature_att
+
+    def attention_norm(self, feature, heatmap):
+        from math import sqrt
+        b, c, h, w = heatmap.shape
+        att = F.softmax(heatmap.view(b, c, -1) / sqrt(h * w), dim=2).view(b, c, h, w)
+        feature_att = feature * att
+        return feature_att
 
 
 def build_rpn(cfg, in_channels):

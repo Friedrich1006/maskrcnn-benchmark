@@ -172,6 +172,16 @@ _C.MODEL.RPN.FPN_POST_NMS_PER_BATCH = True
 # Custom rpn head, empty to use default conv or separable conv
 _C.MODEL.RPN.RPN_HEAD = "SingleConvRPNHead"
 
+_C.MODEL.RPN.RNN = CN()
+_C.MODEL.RPN.RNN.INPUT_DIM = 1
+_C.MODEL.RPN.RNN.HIDDEN_DIM = [4, 16, 4, 1]
+_C.MODEL.RPN.RNN.KERNEL_SIZE = [5, 5, 3, 3]
+_C.MODEL.RPN.RNN.NUM_LAYERS = 4
+_C.MODEL.RPN.RNN.BIAS = True
+_C.MODEL.RPN.RNN.PRETRAIN = 'maskrcnn_benchmark/modeling/rnn/rnn_0.pth'
+_C.MODEL.RPN.RNN.PROJECT_TH = 0.5
+_C.MODEL.RPN.RNN.COMBINATION = 'attention_norm'
+
 
 # ---------------------------------------------------------------------------- #
 # ROI HEADS options
