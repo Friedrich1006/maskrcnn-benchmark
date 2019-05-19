@@ -180,7 +180,7 @@ _C.MODEL.RPN.RNN.NUM_LAYERS = 4
 _C.MODEL.RPN.RNN.BIAS = True
 _C.MODEL.RPN.RNN.PRETRAIN = 'maskrcnn_benchmark/modeling/rnn/rnn_0.pth'
 _C.MODEL.RPN.RNN.PROJECT_TH = 0.5
-_C.MODEL.RPN.RNN.COMBINATION = 'attention_norm'
+_C.MODEL.RPN.RNN.COMBINATION = 'cat'
 
 
 # ---------------------------------------------------------------------------- #

@@ -212,6 +212,8 @@ class RPNVideoModule(torch.nn.Module):
         anchor_generator = make_anchor_generator(cfg)
 
         rpn_head = registry.RPN_HEADS[cfg.MODEL.RPN.RPN_HEAD]
+        if cfg.MODEL.RPN.RNN.COMBINATION == 'cat':
+            in_channels += 1
         head = rpn_head(
             cfg, in_channels, anchor_generator.num_anchors_per_location()[0]
         )
@@ -341,6 +343,9 @@ class RPNVideoModule(torch.nn.Module):
         att = F.softmax(heatmap.view(b, c, -1) / sqrt(h * w), dim=2).view(b, c, h, w)
         feature_att = feature * att
         return feature_att
+
+    def cat(self, feature, heatmap):
+        return torch.cat((feature, heatmap), dim=1)
 
 
 def build_rpn(cfg, in_channels):
