@@ -23,6 +23,7 @@ def compute_on_dataset(model, data_loader, device, timer=None):
     for _, batch in enumerate(tqdm(data_loader)):
         images, targets, others = batch
         images = images.to(device)
+        image_ids = [o[0] for o in others]
         videos = [o[2] for o in others]
         frames = [o[3] for o in others]
         with torch.no_grad():
@@ -76,7 +77,6 @@ def inference(
     device = torch.device(device)
     num_devices = get_world_size()
     logger = logging.getLogger("maskrcnn_benchmark.inference")
-    writer = SummaryWriter(os.path.join(checkpointer.save_dir, 'logs'))
     dataset = data_loader.dataset
     logger.info("Start evaluation on {} dataset({} images).".format(dataset_name, len(dataset)))
     total_timer = Timer()
