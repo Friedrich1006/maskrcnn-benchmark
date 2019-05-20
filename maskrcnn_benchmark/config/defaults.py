@@ -70,7 +70,7 @@ _C.DATASETS.TRAIN = ()
 # List of the dataset names for testing, as present in paths_catalog.py
 _C.DATASETS.TEST = ()
 
-_C.DATASETS.USE_ANNO_CACHE = False
+_C.DATASETS.USE_ANNO_CACHE = None
 
 # -----------------------------------------------------------------------------
 # DataLoader
