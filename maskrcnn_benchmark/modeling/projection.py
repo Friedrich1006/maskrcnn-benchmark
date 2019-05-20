@@ -17,7 +17,7 @@ def projection(boxes, feature_size, threshold, num_classes=1):
         objectness = boxes.get_field('scores').cpu().numpy()
         labels = boxes.get_field('labels').cpu().numpy()
 
-    proj = torch.zeros(feature_size[0], feature_size[1], device=device)
+    proj = torch.zeros(num_classes, feature_size[0], feature_size[1], device=device)
 
     for i in range(resized_boxes.size(0)):
         o = objectness[i]
