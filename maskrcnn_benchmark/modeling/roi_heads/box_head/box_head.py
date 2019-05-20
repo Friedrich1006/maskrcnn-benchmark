@@ -156,7 +156,7 @@ class ROIBoxHeadVideo(torch.nn.Module):
                 self.last_state = self.rnn(proj)
                 self.video = videos[idx]
             x.append(x_i)
-            proposals.append(proposals_i)
+            proposals.extend(proposals_i)
             for k, v in losses_i.items():
                 if k in losses:
                     losses[k] += v

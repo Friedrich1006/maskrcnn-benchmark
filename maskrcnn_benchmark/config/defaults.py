@@ -70,7 +70,7 @@ _C.DATASETS.TRAIN = ()
 # List of the dataset names for testing, as present in paths_catalog.py
 _C.DATASETS.TEST = ()
 
-_C.DATASETS.USE_ANNO_CACHE = None
+_C.DATASETS.USE_ANNO_CACHE = False
 
 # -----------------------------------------------------------------------------
 # DataLoader
@@ -84,7 +84,7 @@ _C.DATALOADER.SIZE_DIVISIBILITY = 0
 # If True, each batch should contain only images for which the aspect ratio
 # is compatible. This groups portrait images together, and landscape images
 # are not batched with portrait images.
-_C.DATALOADER.ASPECT_RATIO_GROUPING = True
+_C.DATALOADER.ASPECT_RATIO_GROUPING = False
 
 
 # ---------------------------------------------------------------------------- #

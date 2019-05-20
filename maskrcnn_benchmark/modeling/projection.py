@@ -1,7 +1,8 @@
+import numpy as np
 import torch
 from math import floor, ceil
 
-def projection(boxes, feature_size, threshold):
+def projection(boxes, feature_size, threshold, num_classes=1):
     device = boxes.bbox.device
 
     y_ratio = float(feature_size[0]) / float(boxes.size[1])
@@ -10,7 +11,11 @@ def projection(boxes, feature_size, threshold):
     resized_boxes = boxes.bbox * ratio
     resized_boxes = resized_boxes.cpu()
 
-    objectness = boxes.get_field('objectness').cpu().numpy()
+    if num_classes == 1:
+        objectness = boxes.get_field('objectness').cpu().numpy()
+    else:
+        objectness = boxes.get_field('scores').cpu().numpy()
+        labels = boxes.get_field('labels').cpu().numpy()
 
     proj = torch.zeros(feature_size[0], feature_size[1], device=device)
 
@@ -36,13 +41,18 @@ def projection(boxes, feature_size, threshold):
             yp = y2 - y_min
             yq = y_max - y3
 
-            proj[y2: y3, x2: x3] += o
-            proj[y1: y2, x2: x3] += o * yp
-            proj[y3: y4, x2: x3] += o * yq
-            proj[y2: y3, x1: x2] += o * xp
-            proj[y2: y3, x3: x4] += o * xq
-            proj[y1: y2, x1: x2] += o * yp * xp
-            proj[y1: y2, x3: x4] += o * yp * xq
-            proj[y3: y4, x1: x2] += o * yq * xp
-            proj[y3: y4, x3: x4] += o * yq * xq
-    return proj.view(1, 1, feature_size[0], feature_size[1])
+            if num_classes == 1:
+                l = 0
+            else:
+                l = labels[i]
+
+            proj[l, y2: y3, x2: x3] += o
+            proj[l, y1: y2, x2: x3] += o * yp
+            proj[l, y3: y4, x2: x3] += o * yq
+            proj[l, y2: y3, x1: x2] += o * xp
+            proj[l, y2: y3, x3: x4] += o * xq
+            proj[l, y1: y2, x1: x2] += o * yp * xp
+            proj[l, y1: y2, x3: x4] += o * yp * xq
+            proj[l, y3: y4, x1: x2] += o * yq * xp
+            proj[l, y3: y4, x3: x4] += o * yq * xq
+    return proj.view(1, num_classes, feature_size[0], feature_size[1])

@@ -284,7 +284,7 @@ class RPNVideoModule(torch.nn.Module):
                 else:
                     self.last_state = self.rnn(proj)
                     self.video = videos[idx]
-                boxes.append(boxes_i)
+                boxes.extend(boxes_i)
                 for k, v in losses_i.items():
                     if k in losses:
                         losses[k] += v
@@ -298,7 +298,7 @@ class RPNVideoModule(torch.nn.Module):
                 else:
                     self.last_state = self.rnn(proj)
                     self.video = videos[idx]
-                boxes.append(boxes_i)
+                boxes.extend(boxes_i)
         return boxes, losses
 
     def _forward_train(self, anchors, objectness, rpn_box_regression, targets):
