@@ -6,6 +6,8 @@ from .roi_box_feature_extractors import make_roi_box_feature_extractor
 from .roi_box_predictors import make_roi_box_predictor
 from .inference import make_roi_box_post_processor
 from .loss import make_roi_box_loss_evaluator
+from maskrcnn_benchmark.modeling.convlstm import ConvLSTM, ConvLSTMCell
+from maskrcnn_benchmark.modeling.projection import projection
 
 
 class ROIBoxHead(torch.nn.Module):
@@ -62,10 +64,118 @@ class ROIBoxHead(torch.nn.Module):
         )
 
 
+class ROIBoxHeadVideo(torch.nn.Module):
+    """
+    Generic Box Head class.
+    """
+
+    def __init__(self, cfg, in_channels):
+        super(ROIBoxHeadVideo, self).__init__()
+
+        self.num_classes = cfg.MODEL.ROI_BOX_HEAD.NUM_CLASSES
+        if cfg.MODEL.ROI_BOX_HEAD.RNN.COMBINATION == 'cat':
+            in_channels += self.num_classes
+
+        self.feature_extractor = make_roi_box_feature_extractor(cfg, in_channels)
+        self.predictor = make_roi_box_predictor(
+            cfg, self.feature_extractor.out_channels)
+        self.post_processor = make_roi_box_post_processor(cfg)
+        self.loss_evaluator = make_roi_box_loss_evaluator(cfg)
+
+        self.rnn = ConvLSTM(cfg.MODEL.ROI_BOX_HEAD.RNN.INPUT_DIM,
+                            cfg.MODEL.ROI_BOX_HEAD.RNN.HIDDEN_DIM,
+                            cfg.MODEL.ROI_BOX_HEAD.RNN.KERNEL_SIZE,
+                            cfg.MODEL.ROI_BOX_HEAD.RNN.NUM_LAYERS,
+                            cfg.MODEL.ROI_BOX_HEAD.RNN.BIAS,
+                            cfg.MODEL.ROI_BOX_HEAD.RNN.PRETRAIN)
+        self.project_th = cfg.MODEL.ROI_BOX_HEAD.RNN.PROJECT_TH
+        self.combination = getattr(self, cfg.MODEL.ROI_BOX_HEAD.RNN.COMBINATION)
+        self.last_state = None
+        self.video = ''
+
+    def forward(self, features, proposals, targets=None, videos=None, frames=None):
+        """
+        Arguments:
+            features (list[Tensor]): feature-maps from possibly several levels
+            proposals (list[BoxList]): proposal boxes
+            targets (list[BoxList], optional): the ground-truth targets.
+            videos (list[str]): video names of images (optional)
+            frames (list[int]): frame indices of images in videos (optional)
+
+        Returns:
+            x (Tensor): the result of the feature extractor
+            proposals (list[BoxList]): during training, the subsampled proposals
+                are returned. During testing, the predicted boxlists are returned
+            losses (dict[Tensor]): During training, returns the losses for the
+                head. During testing, returns an empty dict.
+        """
+        feature_h = features[0].size(2)
+        feature_w = features[0].size(3)
+        device = features[0].device
+        x = []
+        proposals = []
+        losses = {}
+        for idx in range(features[0].size(0)):
+            if self.video == videos[idx]:
+                heatmap = self.last_state[-1][0]
+            else:
+                heatmap = torch.zeros(self.num_classes, 1, feature_h, feature_w,
+                                      device=device)
+            features_i = features[0][idx].unsqueeze(0)
+            comb = [self.combination(features_i, heatmap)]
+            proposals_i = [proposals[idx]]
+            targets_i = [targets[idx]]
+
+            if self.training:
+                # Faster R-CNN subsamples during training the proposals with a fixed
+                # positive / negative ratio
+                with torch.no_grad():
+                    proposals_i = self.loss_evaluator.subsample(proposals_i, targets_i)
+            
+            # extract features that will be fed to the final classifier. The
+            # feature_extractor generally corresponds to the pooler + heads
+            x_i = self.feature_extractor(features_i, proposals_i)
+            # final classifier that converts the features into predictions
+            class_logits_i, box_regression_i = self.predictor(x_i)
+
+            proposals_i = self.post_processor((class_logits_i, box_regression_i), proposals_i)
+
+            loss_classifier_i, loss_box_reg_i = self.loss_evaluator(
+                [class_logits_i], [box_regression_i]
+            )
+            losses_i = {
+                "loss_classifier": loss_classifier_i,
+                "loss_box_reg": loss_box_reg_i,
+            }
+
+            proj = projection(proposals_i[0], (feature_h, feature_w),
+                              self.project_th, self.num_classes)
+            if self.video == videos[idx]:
+                self.last_state = self.rnn(proj, self.last_state)
+            else:
+                self.last_state = self.rnn(proj)
+                self.video = videos[idx]
+            x.append(x_i)
+            proposals.append(proposals_i)
+            for k, v in losses_i.items():
+                if k in losses:
+                    losses[k] += v
+                else:
+                    losses[k] = v
+
+        x = torch.cat(x, dim=0)
+        return x, proposals, losses
+
+    def cat(self, feature, heatmap):
+        return torch.cat((feature, heatmap), dim=1)
+
+
 def build_roi_box_head(cfg, in_channels):
     """
     Constructs a new box head.
     By default, uses ROIBoxHead, but if it turns out not to be enough, just register a new class
     and make it a parameter in the config
     """
+    if cfg.MODEL.ROI_BOX_HEAD.VIDEO_ON:
+        return ROIBoxHeadVideo(cfg, in_channels)
     return ROIBoxHead(cfg, in_channels)

@@ -231,9 +231,12 @@ class RPNVideoModule(torch.nn.Module):
         self.box_selector_test = box_selector_test
         self.loss_evaluator = loss_evaluator
 
-        self.rnn = ConvLSTM(cfg.MODEL.RPN.RNN.INPUT_DIM, cfg.MODEL.RPN.RNN.HIDDEN_DIM,
-                            cfg.MODEL.RPN.RNN.KERNEL_SIZE, cfg.MODEL.RPN.RNN.NUM_LAYERS,
-                            cfg.MODEL.RPN.RNN.BIAS, cfg.MODEL.RPN.RNN.PRETRAIN)
+        self.rnn = ConvLSTM(cfg.MODEL.RPN.RNN.INPUT_DIM,
+                            cfg.MODEL.RPN.RNN.HIDDEN_DIM,
+                            cfg.MODEL.RPN.RNN.KERNEL_SIZE,
+                            cfg.MODEL.RPN.RNN.NUM_LAYERS,
+                            cfg.MODEL.RPN.RNN.BIAS,
+                            cfg.MODEL.RPN.RNN.PRETRAIN)
         self.project_th = cfg.MODEL.RPN.RNN.PROJECT_TH
         self.combination = getattr(self, cfg.MODEL.RPN.RNN.COMBINATION)
         self.last_state = None
@@ -260,7 +263,9 @@ class RPNVideoModule(torch.nn.Module):
         feature_h = features[0].size(2)
         feature_w = features[0].size(3)
         device = features[0].device
-        for idx in range(images.tensors.size(0)):
+        boxes = []
+        losses = {}
+        for idx in range(features[0].size(0)):
             if self.video == videos[idx]:
                 heatmap = self.last_state[-1][0]
             else:
@@ -269,31 +274,32 @@ class RPNVideoModule(torch.nn.Module):
             comb = [self.combination(features_i, heatmap)]
             anchors_i = [anchors[idx]]
             targets_i = [targets[idx]]
-            objectness, rpn_box_regression = self.head(comb)
+            objectness_i, rpn_box_regression_i = self.head(comb)
             if self.training:
-                boxes, losses = self._forward_train(anchors_i, objectness,
-                                                    rpn_box_regression, targets_i)
-                proj = projection(boxes[0], (feature_h, feature_w), self.project_th)
+                boxes_i, losses_i = self._forward_train(anchors_i, objectness_i,
+                                                        rpn_box_regression_i, targets_i)
+                proj = projection(boxes_i[0], (feature_h, feature_w), self.project_th)
                 if self.video == videos[idx]:
-                    if not self.rnn.freezed:
-                        loss_rnn = F.mse_loss(heatmap, proj)
-                        losses['loss_rnn'] = loss_rnn
                     self.last_state = self.rnn(proj, self.last_state)
                 else:
-                    if not self.rnn.freezed:
-                        losses['loss_rnn'] = torch.zeros(1, device=device)
                     self.last_state = self.rnn(proj)
                     self.video = videos[idx]
-                return boxes, losses
+                boxes.append(boxes_i)
+                for k, v in losses_i.items():
+                    if k in losses:
+                        losses[k] += v
+                    else:
+                        losses[k] = v
             else:
-                boxes, _ = self._forward_test(anchors, objectness, rpn_box_regression)
-                proj = projection(boxes[0], (feature_h, feature_w), self.project_th)
+                boxes_i, _ = self._forward_test(anchors, objectness_i, rpn_box_regression_i)
+                proj = projection(boxes_i[0], (feature_h, feature_w), self.project_th)
                 if self.video == videos[idx]:
                     self.last_state = self.rnn(proj, self.last_state)
                 else:
                     self.last_state = self.rnn(proj)
                     self.video = videos[idx]
-                return boxes, {}
+                boxes.append(boxes_i)
+        return boxes, losses
 
     def _forward_train(self, anchors, objectness, rpn_box_regression, targets):
         if self.cfg.MODEL.RPN_ONLY:
@@ -354,6 +360,6 @@ def build_rpn(cfg, in_channels):
     """
     if cfg.MODEL.RETINANET_ON:
         return build_retinanet(cfg, in_channels)
-    if cfg.MODEL.VIDEO_ON:
+    if cfg.MODEL.RPN.VIDEO_ON:
         return RPNVideoModule(cfg, in_channels)
     return RPNModule(cfg, in_channels)

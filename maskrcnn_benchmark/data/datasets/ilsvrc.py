@@ -39,7 +39,8 @@ class ILSVRCDataset(torch.utils.data.Dataset):
                    'n02129604', 'n04468005', 'n01662784', 'n04530566',
                    'n02062744', 'n02391049']
 
-    def __init__(self, root, task_set, split, img_index, transforms=None):
+    def __init__(self, root, task_set, split, img_index, transforms=None,
+                 use_anno_cache=True):
         self.root = root
         self.task_set = task_set
         self.split = split
@@ -58,19 +59,21 @@ class ILSVRCDataset(torch.utils.data.Dataset):
         self.classes_idx_to_lbl = dict(zip(self.CLASSES_IDX,
                                            range(len(self.CLASSES_IDX))))
 
-        self.cache_path = os.path.join(root, '__cache__')
-        if not os.path.exists(self.cache_path):
-            os.makedirs(self.cache_path)
-        cache_file = os.path.join(self.cache_path, self.img_index + '_anno.pkl')
-        if os.path.exists(cache_file):
-            with open(cache_file, 'rb') as fid:
-                self.annos = pickle.load(fid)
-            print('{}\'s annotation loaded from {}'.format(self.img_index, cache_file))
-        else:
-            self.annos = self.preload_annos()
-            with open(cache_file, 'wb') as fid:
-                pickle.dump(self.annos, fid)
-            print('{}\'s annotation saved to {}'.format(self.img_index, cache_file))
+        self.use_anno_cache = use_anno_cache
+        if self.use_anno_cache:
+            self.cache_path = os.path.join(root, '__cache__')
+            if not os.path.exists(self.cache_path):
+                os.makedirs(self.cache_path)
+            cache_file = os.path.join(self.cache_path, self.img_index + '_anno.pkl')
+            if os.path.exists(cache_file):
+                with open(cache_file, 'rb') as fid:
+                    self.annos = pickle.load(fid)
+                print('{}\'s annotation loaded from {}'.format(self.img_index, cache_file))
+            else:
+                self.annos = self.preload_annos()
+                with open(cache_file, 'wb') as fid:
+                    pickle.dump(self.annos, fid)
+                print('{}\'s annotation saved to {}'.format(self.img_index, cache_file))
 
     def __getitem__(self, idx):
         file_name = self.file_idx[idx]
@@ -91,7 +94,12 @@ class ILSVRCDataset(torch.utils.data.Dataset):
         return len(self.file_idx)
 
     def get_groundtruth(self, idx):
-        anno = self.annos[idx]
+        if self.use_anno_cache:
+            anno = self.annos[idx]
+        else:
+            file_name = self.file_idx[idx]
+            tree = ET.parse(self.anno_path % file_name).getroot()
+            anno = self.preprocess_annotation(tree)
 
         height, width = anno['im_info']
         target = BoxList(anno['boxes'].reshape(-1, 4), (width, height), mode='xyxy')

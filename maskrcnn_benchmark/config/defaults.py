@@ -28,7 +28,6 @@ _C.MODEL.KEYPOINT_ON = False
 _C.MODEL.DEVICE = "cuda"
 _C.MODEL.META_ARCHITECTURE = "GeneralizedRCNN"
 _C.MODEL.CLS_AGNOSTIC_BBOX_REG = False
-_C.MODEL.VIDEO_ON = False
 
 # If the WEIGHT starts with a catalog://, like :R-50, the code will look for
 # the path in paths_catalog. Else, it will use it as the specified absolute
@@ -70,6 +69,8 @@ _C.DATASETS = CN()
 _C.DATASETS.TRAIN = ()
 # List of the dataset names for testing, as present in paths_catalog.py
 _C.DATASETS.TEST = ()
+
+_C.DATASETS.USE_ANNO_CACHE = False
 
 # -----------------------------------------------------------------------------
 # DataLoader
@@ -172,6 +173,7 @@ _C.MODEL.RPN.FPN_POST_NMS_PER_BATCH = True
 # Custom rpn head, empty to use default conv or separable conv
 _C.MODEL.RPN.RPN_HEAD = "SingleConvRPNHead"
 
+_C.MODEL.RPN.VIDEO_ON = False
 _C.MODEL.RPN.RNN = CN()
 _C.MODEL.RPN.RNN.INPUT_DIM = 1
 _C.MODEL.RPN.RNN.HIDDEN_DIM = [4, 16, 4, 1]
@@ -233,6 +235,17 @@ _C.MODEL.ROI_BOX_HEAD.USE_GN = False
 _C.MODEL.ROI_BOX_HEAD.DILATION = 1
 _C.MODEL.ROI_BOX_HEAD.CONV_HEAD_DIM = 256
 _C.MODEL.ROI_BOX_HEAD.NUM_STACKED_CONVS = 4
+
+_C.MODEL.ROI_BOX_HEAD.VIDEO_ON = False
+_C.MODEL.ROI_BOX_HEAD.RNN = CN()
+_C.MODEL.ROI_BOX_HEAD.RNN.INPUT_DIM = 1
+_C.MODEL.ROI_BOX_HEAD.RNN.HIDDEN_DIM = [4, 16, 4, 1]
+_C.MODEL.ROI_BOX_HEAD.RNN.KERNEL_SIZE = [5, 5, 3, 3]
+_C.MODEL.ROI_BOX_HEAD.RNN.NUM_LAYERS = 4
+_C.MODEL.ROI_BOX_HEAD.RNN.BIAS = True
+_C.MODEL.ROI_BOX_HEAD.RNN.PRETRAIN = 'maskrcnn_benchmark/modeling/rnn/rnn_0.pth'
+_C.MODEL.ROI_BOX_HEAD.RNN.PROJECT_TH = 0.5
+_C.MODEL.ROI_BOX_HEAD.RNN.COMBINATION = 'cat'
 
 
 _C.MODEL.ROI_MASK_HEAD = CN()
