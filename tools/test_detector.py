@@ -114,6 +114,8 @@ frames = [o[3] for o in others]
 backbone = model.backbone
 rpn = model.rpn
 roi_heads = model.roi_heads
+box = roi_heads.box
+rnn = box.rnn
 
 images = to_image_list(images)
 features = backbone(images.tensors)
