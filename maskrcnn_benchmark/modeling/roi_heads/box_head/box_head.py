@@ -113,7 +113,7 @@ class ROIBoxHeadVideo(torch.nn.Module):
         feature_w = features[0].size(3)
         device = features[0].device
         x = []
-        proposals = []
+        results = []
         losses = {}
         for idx in range(features[0].size(0)):
             if self.video == videos[idx]:
@@ -122,7 +122,7 @@ class ROIBoxHeadVideo(torch.nn.Module):
                 heatmap = torch.zeros(self.num_classes, 1, feature_h, feature_w,
                                       device=device)
             features_i = features[0][idx].unsqueeze(0)
-            comb = [self.combination(features_i, heatmap)]
+            comb = [self.combination(features_i, heatmap.view(1, self.num_classes, feature_h, feature_w))]
             proposals_i = [proposals[idx]]
             targets_i = [targets[idx]]
 
@@ -134,7 +134,7 @@ class ROIBoxHeadVideo(torch.nn.Module):
             
             # extract features that will be fed to the final classifier. The
             # feature_extractor generally corresponds to the pooler + heads
-            x_i = self.feature_extractor(features_i, proposals_i)
+            x_i = self.feature_extractor(comb, proposals_i)
             # final classifier that converts the features into predictions
             class_logits_i, box_regression_i = self.predictor(x_i)
 
@@ -156,7 +156,7 @@ class ROIBoxHeadVideo(torch.nn.Module):
                 self.last_state = self.rnn(proj)
                 self.video = videos[idx]
             x.append(x_i)
-            proposals.extend(proposals_i)
+            results.extend(proposals_i)
             for k, v in losses_i.items():
                 if k in losses:
                     losses[k] += v
@@ -164,7 +164,7 @@ class ROIBoxHeadVideo(torch.nn.Module):
                     losses[k] = v
 
         x = torch.cat(x, dim=0)
-        return x, proposals, losses
+        return x, results, losses
 
     def cat(self, feature, heatmap):
         return torch.cat((feature, heatmap), dim=1)
