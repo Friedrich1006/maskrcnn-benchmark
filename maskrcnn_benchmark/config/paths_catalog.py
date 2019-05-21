@@ -110,6 +110,12 @@ class DatasetCatalog(object):
             "split": "train",
             "img_index": "VID_train_seg16"
         },
+        "VID_val_seg16": {
+            "root": "datasets/ILSVRC2015",
+            "task_set": "VID",
+            "split": "val",
+            "img_index": "VID_val_seg16"
+        },
         "VID_train_all": {
             "root": "datasets/ILSVRC2015",
             "task_set": "VID",
