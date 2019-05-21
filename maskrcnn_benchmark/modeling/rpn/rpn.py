@@ -346,7 +346,7 @@ class RPNVideoModule(torch.nn.Module):
     def attention_norm(self, feature, heatmap):
         from math import sqrt
         b, c, h, w = heatmap.shape
-        att = F.softmax(heatmap.view(b, c, -1) / sqrt(h * w), dim=2).view(b, c, h, w)
+        att = F.softmax(heatmap.view(-1) / sqrt(b * c * h * w), dim=0).view(b, c, h, w)
         feature_att = feature * att
         return feature_att
 

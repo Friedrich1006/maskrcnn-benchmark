@@ -122,7 +122,7 @@ class ROIBoxHeadVideo(torch.nn.Module):
                 heatmap = torch.zeros(self.num_classes, 1, feature_h, feature_w,
                                       device=device)
             features_i = features[0][idx].unsqueeze(0)
-            comb = [self.combination(features_i, heatmap.view(1, self.num_classes, feature_h, feature_w))]
+            comb = self.combination(features_i, heatmap)
             proposals_i = [proposals[idx]]
             targets_i = [targets[idx]]
 
@@ -132,11 +132,19 @@ class ROIBoxHeadVideo(torch.nn.Module):
                 with torch.no_grad():
                     proposals_i = self.loss_evaluator.subsample(proposals_i, targets_i)
             
-            # extract features that will be fed to the final classifier. The
-            # feature_extractor generally corresponds to the pooler + heads
-            x_i = self.feature_extractor(comb, proposals_i)
-            # final classifier that converts the features into predictions
-            class_logits_i, box_regression_i = self.predictor(x_i)
+            if self.combination == self.attention_norm:
+                x_i = []
+                class_logits_i = []
+                box_regression_i = []
+                for c in range(self.num_classes):
+                    x_i_c = self.feature_extractor([comb[c: c + 1]], proposals_i)
+                    class_logits_i_c = self.predictor(x_i[c: c + 1])
+            else: 
+                # extract features that will be fed to the final classifier. The
+                # feature_extractor generally corresponds to the pooler + heads
+                x_i = self.feature_extractor(comb, proposals_i)
+                # final classifier that converts the features into predictions
+                class_logits_i, box_regression_i = self.predictor(x_i)
 
             proposals_i = self.post_processor((class_logits_i, box_regression_i), proposals_i)
 
@@ -168,6 +176,13 @@ class ROIBoxHeadVideo(torch.nn.Module):
 
     def cat(self, feature, heatmap):
         return torch.cat((feature, heatmap), dim=1)
+
+    def attention_norm(self, feature, heatmap):
+        from math import sqrt
+        b, c, h, w = heatmap.shape
+        att = F.softmax(heatmap.view(-1) / sqrt(b * c * h * w), dim=0).view(b, c, h, w)
+        feature_att = feature * att
+        return feature_att
 
 
 def build_roi_box_head(cfg, in_channels):

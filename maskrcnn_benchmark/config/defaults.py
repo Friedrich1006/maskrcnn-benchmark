@@ -182,7 +182,7 @@ _C.MODEL.RPN.RNN.NUM_LAYERS = 4
 _C.MODEL.RPN.RNN.BIAS = True
 _C.MODEL.RPN.RNN.PRETRAIN = 'maskrcnn_benchmark/modeling/rnn/rnn_0.pth'
 _C.MODEL.RPN.RNN.PROJECT_TH = 0.5
-_C.MODEL.RPN.RNN.COMBINATION = 'cat'
+_C.MODEL.RPN.RNN.COMBINATION = 'attention_norm'
 
 
 # ---------------------------------------------------------------------------- #
@@ -245,7 +245,7 @@ _C.MODEL.ROI_BOX_HEAD.RNN.NUM_LAYERS = 4
 _C.MODEL.ROI_BOX_HEAD.RNN.BIAS = True
 _C.MODEL.ROI_BOX_HEAD.RNN.PRETRAIN = 'maskrcnn_benchmark/modeling/rnn/rnn_0.pth'
 _C.MODEL.ROI_BOX_HEAD.RNN.PROJECT_TH = 0.5
-_C.MODEL.ROI_BOX_HEAD.RNN.COMBINATION = 'cat'
+_C.MODEL.ROI_BOX_HEAD.RNN.COMBINATION = 'attention_norm'
 
 
 _C.MODEL.ROI_MASK_HEAD = CN()
