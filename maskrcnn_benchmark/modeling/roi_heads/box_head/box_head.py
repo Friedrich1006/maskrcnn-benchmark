@@ -133,24 +133,26 @@ class ROIBoxHeadVideo(torch.nn.Module):
                 # positive / negative ratio
                 with torch.no_grad():
                     proposals_i = self.loss_evaluator.subsample(proposals_i, targets_i)
-            
+
             if self.combination == self.attention_norm:
+                heatsum = heatmap.view(self.num_classes, -1).sum(dim=1)
+                _, top_c = heatsum.topk(5)
+                top_c = top_c.tolist()
+
                 x_i = []
                 class_logits_i = []
                 box_regression_i = []
 
-                for c in range(self.num_classes):
+                for c in top_c:
                     x_i_c = self.feature_extractor([comb[c: c + 1]], proposals_i)
                     class_logits_i_c, box_regression_i_c = self.predictor(x_i_c)
-                    class_logits_i_c = class_logits_i_c[:, c: c + 1]
-                    box_regression_i_c = box_regression_i_c[:, c * 4: (c + 1) * 4]
                     x_i.append(x_i_c)
                     class_logits_i.append(class_logits_i_c)
                     box_regression_i.append(box_regression_i_c)
 
-                x_i = sum(x_i)
-                class_logits_i = torch.cat(class_logits_i, dim=1)
-                box_regression_i = torch.cat(box_regression_i, dim=1)
+                x_i = sum(x_i) / len(box_regression_i)
+                class_logits_i = sum(class_logits_i) / len(box_regression_i)
+                box_regression_i = sum(box_regression_i) / len(box_regression_i)
 
             else:
                 # extract features that will be fed to the final classifier. The
