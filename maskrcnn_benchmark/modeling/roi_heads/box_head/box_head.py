@@ -1,6 +1,8 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
 import torch
+import torch.nn.functional as F
 from torch import nn
+
 
 from .roi_box_feature_extractors import make_roi_box_feature_extractor
 from .roi_box_predictors import make_roi_box_predictor
@@ -136,10 +138,21 @@ class ROIBoxHeadVideo(torch.nn.Module):
                 x_i = []
                 class_logits_i = []
                 box_regression_i = []
+
                 for c in range(self.num_classes):
                     x_i_c = self.feature_extractor([comb[c: c + 1]], proposals_i)
-                    class_logits_i_c = self.predictor(x_i[c: c + 1])
-            else: 
+                    class_logits_i_c, box_regression_i_c = self.predictor(x_i_c)
+                    class_logits_i_c = class_logits_i_c[:, c: c + 1]
+                    box_regression_i_c = box_regression_i_c[:, c * 4: (c + 1) * 4]
+                    x_i.append(x_i_c)
+                    class_logits_i.append(class_logits_i_c)
+                    box_regression_i.append(box_regression_i_c)
+
+                x_i = sum(x_i)
+                class_logits_i = torch.cat(class_logits_i, dim=1)
+                box_regression_i = torch.cat(box_regression_i, dim=1)
+
+            else:
                 # extract features that will be fed to the final classifier. The
                 # feature_extractor generally corresponds to the pooler + heads
                 x_i = self.feature_extractor(comb, proposals_i)
