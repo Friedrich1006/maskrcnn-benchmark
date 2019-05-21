@@ -25,7 +25,7 @@ class ROIBoxHead(torch.nn.Module):
         self.post_processor = make_roi_box_post_processor(cfg)
         self.loss_evaluator = make_roi_box_loss_evaluator(cfg)
 
-    def forward(self, features, proposals, targets=None):
+    def forward(self, features, proposals, targets=None, videos=None, frames=None):
         """
         Arguments:
             features (list[Tensor]): feature-maps from possibly several levels
