@@ -163,16 +163,14 @@ class ResNetHead(nn.Module):
         stride_init=None,
         res2_out_channels=256,
         dilation=1,
-        dcn_config={},
-        in_channels=None
+        dcn_config={}
     ):
         super(ResNetHead, self).__init__()
 
         stage2_relative_factor = 2 ** (stages[0].index - 1)
         stage2_bottleneck_channels = num_groups * width_per_group
         out_channels = res2_out_channels * stage2_relative_factor
-        if in_channels is None:
-            in_channels = out_channels // 2
+        in_channels = out_channels // 2
         bottleneck_channels = stage2_bottleneck_channels * stage2_relative_factor
 
         block_module = _TRANSFORMATION_MODULES[block_module]

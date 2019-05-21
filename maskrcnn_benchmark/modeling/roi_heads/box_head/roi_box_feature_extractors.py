@@ -33,8 +33,7 @@ class ResNet50Conv5ROIFeatureExtractor(nn.Module):
             stride_in_1x1=config.MODEL.RESNETS.STRIDE_IN_1X1,
             stride_init=None,
             res2_out_channels=config.MODEL.RESNETS.RES2_OUT_CHANNELS,
-            dilation=config.MODEL.RESNETS.RES5_DILATION,
-            in_channels=in_channels
+            dilation=config.MODEL.RESNETS.RES5_DILATION
         )
 
         self.pooler = pooler
