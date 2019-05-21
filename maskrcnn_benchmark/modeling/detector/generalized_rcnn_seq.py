@@ -49,9 +49,11 @@ class GeneralizedRCNNSeq(nn.Module):
             raise ValueError("In training mode, targets should be passed")
         images = to_image_list(images)
         features = self.backbone(images.tensors)
-        proposals, proposal_losses = self.rpn(images, features, targets, videos, frames)
+        proposals, proposal_losses = self.rpn(images, features, targets,
+                                              videos, frames)
         if self.roi_heads:
-            x, result, detector_losses = self.roi_heads(features, proposals, targets)
+            x, result, detector_losses = self.roi_heads(features, proposals, targets,
+                                                        videos, frames)
         else:
             # RPN-only models don't have roi_heads
             x = features
