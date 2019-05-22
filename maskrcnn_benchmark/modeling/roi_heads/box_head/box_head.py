@@ -143,7 +143,7 @@ class ROIBoxHeadVideo(torch.nn.Module):
                 class_logits_i = []
                 box_regression_i = []
 
-                for c in top_c.size(0):
+                for c in range(top_c.size(0)):
                     x_i_c = self.feature_extractor([comb[c: c + 1]], proposals_i)
                     class_logits_i_c, box_regression_i_c = self.predictor(x_i_c)
                     x_i.append(x_i_c)

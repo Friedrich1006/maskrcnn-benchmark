@@ -137,14 +137,14 @@ class ConvLSTM(nn.Module):
         Parameters
         ----------
         input_tensor:
-            4-D tensor of shape (t, c, h, w).
+            4-D tensor of shape (b, c, h, w).
         hidden_state:
-            List of num_layers lists of two 4-D tensors of shape (1, c, h, w).
+            List of num_layers lists of two 4-D tensors of shape (b, c, h, w).
             
         Returns
         -------
         last_state_list:
-            List of num_layers lists of two 4-D tensors of shape (1, c, h, w).
+            List of num_layers lists of two 4-D tensors of shape (b, c, h, w).
         """
 
         if hidden_state is None:
@@ -155,16 +155,13 @@ class ConvLSTM(nn.Module):
 
         last_state_list = []
 
-        seq_len = input_tensor.size(0)
         cur_layer_input = input_tensor
 
         for layer_idx in range(self.num_layers):
             h, c = hidden_state[layer_idx]
             output_inner = []
-            for t in range(seq_len):
-                h, c = self.cell_list[layer_idx](cur_layer_input[t: t + 1, :, :, :],
-                                                 [h, c])
-                output_inner.append(h)
+            h, c = self.cell_list[layer_idx](cur_layer_input, [h, c])
+            output_inner.append(h)
 
             layer_output = torch.cat(output_inner, dim=0)
             cur_layer_input = layer_output
