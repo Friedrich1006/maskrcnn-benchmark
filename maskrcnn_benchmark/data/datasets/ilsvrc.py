@@ -60,6 +60,7 @@ class ILSVRCDataset(torch.utils.data.Dataset):
                                            range(len(self.CLASSES_IDX))))
 
         self.use_anno_cache = use_anno_cache
+        print('USE_ANNO_CACHE:', use_anno_cache)
         if self.use_anno_cache:
             self.cache_path = os.path.join(root, '__cache__')
             if not os.path.exists(self.cache_path):
@@ -151,7 +152,14 @@ class ILSVRCDataset(torch.utils.data.Dataset):
         return annos
 
     def get_img_info(self, idx):
-        im_info = self.annos[idx]['im_info']
+        if self.use_anno_cache:
+            anno = self.annos[idx]
+        else:
+            file_name = self.file_idx[idx]
+            tree = ET.parse(self.anno_path % file_name).getroot()
+            anno = self.preprocess_annotation(tree)
+
+        im_info = anno['im_info']
         return {'height': im_info[0], 'width': im_info[1]}
 
     def map_class_id_to_class_name(self, class_id):
