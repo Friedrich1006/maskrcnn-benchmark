@@ -77,6 +77,8 @@ class ROIBoxHeadVideo(torch.nn.Module):
         self.num_classes = cfg.MODEL.ROI_BOX_HEAD.NUM_CLASSES
         if cfg.MODEL.ROI_BOX_HEAD.RNN.COMBINATION == 'cat':
             in_channels += self.num_classes
+        elif cfg.MODEL.ROI_BOX_HEAD.RNN.COMBINATION == 'attention_norm':
+            self.topk = cfg.MODEL.ROI_BOX_HEAD.RNN.TOPK
 
         self.feature_extractor = make_roi_box_feature_extractor(cfg, in_channels)
         self.predictor = make_roi_box_predictor(
@@ -136,23 +138,23 @@ class ROIBoxHeadVideo(torch.nn.Module):
 
             if self.combination == self.attention_norm:
                 heatsum = heatmap.view(self.num_classes, -1).sum(dim=1)
-                _, top_c = heatsum.topk(2)
+                _, top_c = heatsum.topk(self.topk)
                 comb = comb[top_c]
 
                 x_i = []
                 class_logits_i = []
                 box_regression_i = []
 
-                for c in range(top_c.size(0)):
+                for c in range(self.topk):
                     x_i_c = self.feature_extractor([comb[c: c + 1]], proposals_i)
                     class_logits_i_c, box_regression_i_c = self.predictor(x_i_c)
                     x_i.append(x_i_c)
                     class_logits_i.append(class_logits_i_c)
                     box_regression_i.append(box_regression_i_c)
 
-                x_i = sum(x_i) / len(box_regression_i)
-                class_logits_i = sum(class_logits_i) / len(box_regression_i)
-                box_regression_i = sum(box_regression_i) / len(box_regression_i)
+                x_i = sum(x_i) / self.topk
+                class_logits_i = sum(class_logits_i) / self.topk
+                box_regression_i = sum(box_regression_i) / self.topk
 
             else:
                 # extract features that will be fed to the final classifier. The
