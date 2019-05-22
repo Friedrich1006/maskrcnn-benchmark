@@ -60,7 +60,6 @@ class ILSVRCDataset(torch.utils.data.Dataset):
                                            range(len(self.CLASSES_IDX))))
 
         self.use_anno_cache = use_anno_cache
-        print('USE_ANNO_CACHE:', use_anno_cache)
         if self.use_anno_cache:
             self.cache_path = os.path.join(root, '__cache__')
             if not os.path.exists(self.cache_path):

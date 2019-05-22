@@ -42,7 +42,6 @@ def build_dataset(dataset_list, transforms, dataset_catalog, is_train=True, use_
         args["transforms"] = transforms
         if use_anno_cache is not None:
             args["use_anno_cache"] = use_anno_cache
-        print('USE_ANNO_CACHE:', use_anno_cache)
         # make dataset from factory
         dataset = factory(**args)
         datasets.append(dataset)
@@ -153,7 +152,6 @@ def make_data_loader(cfg, is_train=True, is_distributed=False, start_iter=0, shu
 
     transforms = build_transforms(cfg, is_train)
     use_anno_cache = cfg.DATASETS.USE_ANNO_CACHE
-    print('USE_ANNO_CACHE:', use_anno_cache)
     datasets = build_dataset(dataset_list, transforms, DatasetCatalog, is_train, use_anno_cache)
 
     data_loaders = []
