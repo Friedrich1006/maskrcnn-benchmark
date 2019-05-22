@@ -55,4 +55,4 @@ def projection(boxes, feature_size, threshold, num_classes=1):
             proj[l, y1: y2, x3: x4] += o * yp * xq
             proj[l, y3: y4, x1: x2] += o * yq * xp
             proj[l, y3: y4, x3: x4] += o * yq * xq
-    return proj.view(1, num_classes, feature_size[0], feature_size[1])
+    return proj.view(num_classes, 1, feature_size[0], feature_size[1])

@@ -136,7 +136,7 @@ class ROIBoxHeadVideo(torch.nn.Module):
 
             if self.combination == self.attention_norm:
                 heatsum = heatmap.view(self.num_classes, -1).sum(dim=1)
-                _, top_c = heatsum.topk(3)
+                _, top_c = heatsum.topk(2)
                 comb = comb[top_c]
 
                 x_i = []
