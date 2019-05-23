@@ -1,8 +1,8 @@
 MODEL:
   META_ARCHITECTURE: "GeneralizedRCNNSeq"
-  WEIGHT: "catalog://ImageNetPretrained/MSRA/R-50"
+  WEIGHT: "catalog://ImageNetPretrained/MSRA/R-101"
   BACKBONE:
-    CONV_BODY: 'R-50-C4'
+    CONV_BODY: 'R-101-C4'
   RPN:
     ANCHOR_SIZES: (64, 128, 256, 512)
     PRE_NMS_TOP_N_TRAIN: 6000
@@ -20,11 +20,11 @@ DATASETS:
   TRAIN: ('VID_train_seg16',)
   TEST: ('VID_val_seg16',)
 SOLVER:
-  BASE_LR: 0.001
+  BASE_LR: 0.01
   WEIGHT_DECAY: 0.0001
-  STEPS: (40000, 80000, 120000)
-  MAX_ITER: 160000
+  STEPS: (160000, 240000, 280000)
+  MAX_ITER: 320000
   IMS_PER_BATCH: 2
 TEST:
   IMS_PER_BATCH: 2
-OUTPUT_DIR: "baseline"
+OUTPUT_DIR: "baseline_"
