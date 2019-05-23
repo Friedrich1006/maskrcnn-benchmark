@@ -21,7 +21,6 @@ INPUT:
 DATASETS:
   TRAIN: ('VID_train_seg16',)
   TEST: ('VID_val_seg16',)
-  USE_ANNO_CACHE: True
 SOLVER:
   BASE_LR: 0.001
   WEIGHT_DECAY: 0.0001

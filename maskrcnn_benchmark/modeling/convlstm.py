@@ -126,7 +126,7 @@ class ConvLSTM(nn.Module):
         self.cell_list = nn.ModuleList(cell_list)
 
         self.freezed = False
-        if pretrain is not None:
+        if pretrain != '':
             self.load_state_dict(torch.load(pretrain))
             self.freeze()
 

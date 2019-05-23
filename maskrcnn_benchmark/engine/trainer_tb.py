@@ -78,7 +78,10 @@ def do_train(
         meters.update(loss=losses_reduced, **loss_dict_reduced)
 
         optimizer.zero_grad()
-        losses.backward()
+        if iteration % 8 == 0:
+            losses.backward()
+        else:
+            losses.backward(retain_graph=True)
         optimizer.step()
 
         batch_time = time.time() - end
