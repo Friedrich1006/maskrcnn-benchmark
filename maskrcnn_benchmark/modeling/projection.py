@@ -9,7 +9,7 @@ def projection(boxes, feature_size, threshold, num_classes=1):
     x_ratio = float(feature_size[1]) / float(boxes.size[0])
     ratio = torch.tensor([x_ratio, y_ratio, x_ratio, y_ratio], device=device)
     resized_boxes = boxes.bbox * ratio
-    resized_boxes = resized_boxes.cpu()
+    resized_boxes = resized_boxes.detach().cpu()
 
     if num_classes == 1:
         objectness = boxes.get_field('objectness').detach().cpu().numpy()
@@ -55,4 +55,4 @@ def projection(boxes, feature_size, threshold, num_classes=1):
             proj[l, y1: y2, x3: x4] += o * yp * xq
             proj[l, y3: y4, x1: x2] += o * yq * xp
             proj[l, y3: y4, x3: x4] += o * yq * xq
-    return proj.view(num_classes, 1, feature_size[0], feature_size[1])
+    return proj.view(num_classes, 1, feature_size[0], feature_size[1]).detach()
