@@ -25,8 +25,8 @@ def projection(boxes, feature_size, threshold, num_classes=1):
             box = resized_boxes[i].numpy()
             x_min = max(box[0], 0)
             y_min = max(box[1], 0)
-            x_max = min(box[2], feature_size[0] - 1e-6)
-            y_max = min(box[3], feature_size[1] - 1e-6)
+            x_max = min(box[2], feature_size[1] - 1e-6)
+            y_max = min(box[3], feature_size[0] - 1e-6)
 
             x1 = floor(x_min)
             x2 = ceil(x_min)

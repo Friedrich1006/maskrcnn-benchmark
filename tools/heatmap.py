@@ -68,7 +68,7 @@ with open(cache_file, 'rb') as fid:
 output_dir = cfg.OUTPUT_DIR
 proc = ImageProc()
 
-start = 144166
+start = 161168
 with torch.no_grad():
     for idx in range(100):
         file_name = file_idx[start + idx]

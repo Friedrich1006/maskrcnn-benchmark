@@ -1,5 +1,7 @@
 import cv2
 import torch
+import torch.nn.functional as F
+from math import sqrt
 
 class ImageProc(object):
     CLASSES_NAME = ['__background__',  # always index 0
@@ -70,11 +72,13 @@ class ImageProc(object):
         return image
 
     def overlay_heatmap(self, image, heatmap):
-        from math import sqrt
         b, c, h, w = heatmap.shape
-        fixed_heatmap = F.softmax(heatmap.view(-1) / sqrt(b * c * h * w), dim=0).view(b, c, h, w) * 255
-        fixed_heatmap = fixed_heatmap.squeeze().detach().to('cpu').numpy().astype('uint8')
-        color_heatmap = cv2.applyColorMap(fixed_heatmap, cv2.COLORMAP_JET)
+        norm_heatmap = F.softmax(heatmap.view(-1) / sqrt(b * c * h * w), dim=0).view(b, c, h, w)
+        heatmap_min = norm_heatmap.min() - 1e-6
+        heatmap_max = norm_heatmap.max() + 1e+6
+        norm_heatmap = (norm_heatmap - heatmap_min) / (heatmap_max - heatmap_min) * 255
+        norm_heatmap = norm_heatmap.squeeze().detach().to('cpu').numpy().astype('uint8')
+        color_heatmap = cv2.applyColorMap(norm_heatmap, cv2.COLORMAP_JET)
         color_heatmap = cv2.resize(color_heatmap, (image.shape[1], image.shape[0]),
                                    interpolation=cv2.INTER_NEAREST)
 
