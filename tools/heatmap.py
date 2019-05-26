@@ -68,11 +68,12 @@ with open(cache_file, 'rb') as fid:
 output_dir = cfg.OUTPUT_DIR
 proc = ImageProc()
 
+start = 144166
 with torch.no_grad():
     for idx in range(100):
-        file_name = file_idx[idx]
+        file_name = file_idx[start + idx]
         img = Image.open(img_path % file_name).convert('RGB')
-        anno = annos[idx]
+        anno = annos[start + idx]
         height, width = anno['im_info']
         target = BoxList(anno['boxes'].reshape(-1, 4), (width, height), mode='xyxy')
         target.add_field('labels', anno['labels'])
@@ -86,12 +87,12 @@ with torch.no_grad():
             feature_h = features[0].size(2)
             feature_w = features[0].size(3)
             heatmap = torch.zeros(1, 1, feature_h, feature_w, device=device)
-            proj = projection(target, (feature_h, feature_w)).to(device)
+            proj = projection(target, (feature_h, feature_w), 0.5).to(device)
             last_state = model(proj)
 
         else:
             heatmap = last_state[-1][0]
-            proj = projection(target, (feature_h, feature_w)).to(device)
+            proj = projection(target, (feature_h, feature_w), 0.5).to(device)
             last_state = model(proj, last_state)
 
         img = (img[[2, 1, 0]].permute(1, 2, 0) * 255).numpy().astype('uint8')
@@ -101,5 +102,6 @@ with torch.no_grad():
         img2 = proc.overlay_heatmap(img2, proj)
         img3 = img.copy()
         img3 = proc.overlay_heatmap(img3, heatmap)
-        img4 = np.concatenate((img1, img2, img3))
-        cv2.imwrite(os.path.join(output_dir, '{:0>4d}.png'.format(idx)), img4)
+        cv2.imwrite(os.path.join(output_dir, '1_{:0>8d}.png'.format(start + idx)), img1)
+        cv2.imwrite(os.path.join(output_dir, '2_{:0>8d}.png'.format(start + idx)), img2)
+        cv2.imwrite(os.path.join(output_dir, '3_{:0>8d}.png'.format(start + idx)), img3)

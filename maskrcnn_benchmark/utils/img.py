@@ -70,10 +70,10 @@ class ImageProc(object):
         return image
 
     def overlay_heatmap(self, image, heatmap):
-        heatmap_min = heatmap.min().item() - 1e-6
-        heatmap_max = heatmap.max().item() + 1e-6
-        fixed_heatmap = (heatmap - heatmap_min) / (heatmap_max - heatmap_min) * 255
-        fixed_heatmap = fixed_heatmap.squeeze().to('cpu').numpy().astype('uint8')
+        from math import sqrt
+        b, c, h, w = heatmap.shape
+        fixed_heatmap = F.softmax(heatmap.view(-1) / sqrt(b * c * h * w), dim=0).view(b, c, h, w) * 255
+        fixed_heatmap = fixed_heatmap.squeeze().detach().to('cpu').numpy().astype('uint8')
         color_heatmap = cv2.applyColorMap(fixed_heatmap, cv2.COLORMAP_JET)
         color_heatmap = cv2.resize(color_heatmap, (image.shape[1], image.shape[0]),
                                    interpolation=cv2.INTER_NEAREST)
